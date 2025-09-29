@@ -72,12 +72,30 @@
   {% for t in items %}
     <article class="card">
       <div class="card-body d-flex gap-3">
-        {% if t.image and t.image.name %}
-          <a class="flex-shrink-0" href="{% url 'forum:thread_detail' thread_id=t.id %}">
-            <img src="{{ t.image.url }}" alt="" class="rounded"
-                 style="width:120px;height:80px;object-fit:cover;">
-          </a>
-        {% endif %}
+
+        {# รูปตัวอย่าง: แสดงเฉพาะเมื่อมีรูปจริง #}
+        {% with imgs=t.images.all imgs2=t.threadimage_set.all %}
+          {% if t.image and t.image.name %}
+            <a class="flex-shrink-0" href="{% url 'forum:thread_detail' thread_id=t.id %}">
+              <img src="{{ t.image.url }}" alt="" class="rounded"
+                   style="width:120px;height:80px;object-fit:cover;">
+            </a>
+          {% elif imgs %}
+            {% with img=imgs.0 %}
+              <a class="flex-shrink-0" href="{% url 'forum:thread_detail' thread_id=t.id %}">
+                <img src="{{ img.image.url }}" alt="" class="rounded"
+                     style="width:120px;height:80px;object-fit:cover;">
+              </a>
+            {% endwith %}
+          {% elif imgs2 %}
+            {% with img=imgs2.0 %}
+              <a class="flex-shrink-0" href="{% url 'forum:thread_detail' thread_id=t.id %}">
+                <img src="{{ img.image.url }}" alt="" class="rounded"
+                     style="width:120px;height:80px;object-fit:cover;">
+              </a>
+            {% endwith %}
+          {% endif %}
+        {% endwith %}
 
         <div class="flex-grow-1 min-w-0">
           <h5 class="mb-1 text-truncate">

@@ -13,12 +13,13 @@
     <link href="{% static 'css/theme-dark.css' %}" rel="stylesheet">
 
     <style>
+      
       header, .navbar, .navbar .container, .navbar .container-fluid { overflow: visible !important; }
       :root{ --bs-dropdown-zindex: 2000; }
 
       .navbar .dropdown-menu.usermenu{
         position: absolute;
-        z-index: 3050 !important;  /* สูงกว่าเนื้อหา */
+        z-index: 3050 !important;
         margin-top: .5rem;
         border: 1px solid var(--bs-border-color);
         border-radius: 14px;
@@ -63,17 +64,15 @@
                     clamp(320px, 40vw, 640px) auto repeat;
         opacity: .12;
         pointer-events: none;
-        z-index: 0;  /* ให้อยู่ใต้ทุกอย่าง */
+        z-index: 0;
         filter: grayscale(1) contrast(.95) brightness(.98);
       }
 
-      /* --- stacking order ที่ถูกต้อง --- */
-      .navbar { position: relative; z-index: 3000; }           /* นำหน้าเนื้อหา */
+      .navbar { position: relative; z-index: 3000; }
       main, .container, .card, footer, .modal, [role="main"]{
-        position: relative; z-index: 1;                         /* เหนือพื้นหลังพอ */
+        position: relative; z-index: 1;
       }
 
-      /* โหมดมืด: จางขึ้นเล็กน้อย */
       html[data-bs-theme="dark"] body::before{
         opacity: .16;
         filter: grayscale(1) brightness(1.1);
@@ -153,6 +152,12 @@
                   <li>
                     <a class="dropdown-item" href="{% url 'adminpanel:dashboard' %}">
                       <i class="bi bi-speedometer2 me-2"></i> แอดมินแพเนล
+                    </a>
+                  </li>
+                  <li>
+                    <!-- ลิงก์ใหม่: จัดการกระทู้ (ไปที่ /staff/threads/) -->
+                    <a class="dropdown-item" href="{% url 'forum:admin_threads' %}">
+                      <i class="bi bi-list-check me-2"></i> จัดการกระทู้
                     </a>
                   </li>
                   {% endif %}

@@ -1,23 +1,24 @@
 # forum/views.py
 from datetime import timedelta
 import re
-
+from django.http import Http404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
-from django.db.models import Count, Q, F, IntegerField, Value
 from django.utils import timezone
 from django.urls import reverse
 from django.core.cache import cache
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Count, Q, F, IntegerField, Value, Case, When, BooleanField
 from django.db.models.functions import Coalesce
 
 # --- Fallback สำหรับกรณีไม่มี django-ratelimit (เช่นบน Python 3.13) ---
 try:
     from ratelimit.decorators import ratelimit
-except Exception:
+except Exception:  # pragma: no cover
     def ratelimit(*args, **kwargs):
         def _wrap(fn):
             return fn
@@ -30,6 +31,32 @@ from .forms import ThreadForm, CommentForm, ReportForm
 TRENDING_CACHE_KEY = "home:trending:top5"
 
 # ===================== Helpers (DRY) =====================
+
+@ratelimit(key="ip", rate="10/m", method=["POST"], block=True)
+@login_required
+def report_create(request, target_type, target_id):
+    if target_type not in ("thread", "comment"):
+        return HttpResponseForbidden("invalid target")
+
+    if request.method == "POST":
+        form = ReportForm(request.POST)
+        if form.is_valid():
+            r = form.save(commit=False)
+            r.target_type = target_type
+            r.target_id = int(target_id)
+            r.reporter = request.user
+            r.save()
+            messages.success(request, "ส่งรายงานเรียบร้อย")
+            return redirect("forum:home")
+    else:
+        form = ReportForm()
+
+    return render(
+        request,
+        "forum/report_form.html",
+        {"form": form, "target_type": target_type, "target_id": target_id},
+    )
+
 
 def _thread_base_qs():
     return (
@@ -62,8 +89,95 @@ def _extract_tags_from(thread):
             clean.append(x)
     return clean
 
+# ===================== Admin: จัดการกระทู้ =====================
 
-# ===================== Views =====================
+def _annotate_counts(qs):
+    # ตั้งชื่อไม่ชน property ในโมเดล
+    return qs.annotate(
+        live_comment_count=Count("comments", filter=Q(comments__is_deleted=False))
+    )
+
+@staff_member_required
+def admin_threads(request):
+    q      = (request.GET.get("q") or "").strip()
+    cat    = (request.GET.get("cat") or "").strip()
+    status = (request.GET.get("status") or "active").strip()  # active|deleted|all
+    order  = (request.GET.get("order") or "-created_at").strip()
+
+    qs = Thread.objects.select_related("author", "category")
+
+    if status == "active":
+        qs = qs.filter(is_deleted=False)
+    elif status == "deleted":
+        qs = qs.filter(is_deleted=True)
+
+    if cat:
+        qs = qs.filter(category_id=cat)
+
+    if q:
+        qs = qs.filter(
+            Q(title__icontains=q) |
+            Q(content__icontains=q) |
+            Q(author__username__icontains=q)
+        )
+
+    qs = _annotate_counts(qs)
+
+    order_map = {
+        "-created_at": "-created_at",
+        "created_at": "created_at",
+        "-comment_count": "-live_comment_count",
+    }
+    qs = qs.order_by(order_map.get(order, "-created_at"))
+
+    page_obj = Paginator(qs, 20).get_page(request.GET.get("page"))
+
+    return render(request, "forum/admin_threads.html", {
+        "cats": Category.objects.all(),
+        "page_obj": page_obj,
+        "q": q, "cat": cat, "status": status, "order": order,
+    })
+
+@staff_member_required
+@require_POST
+def admin_thread_toggle_delete(request, thread_id: int):
+    updated = Thread.objects.filter(id=thread_id).update(
+        is_deleted=Case(
+            When(is_deleted=True, then=Value(False)),
+            default=Value(True),
+            output_field=BooleanField(),
+        )
+    )
+    if updated:
+        cache.delete(TRENDING_CACHE_KEY)  # << เพิ่ม
+        messages.success(request, "อัปเดตสถานะกระทู้เรียบร้อย")
+    else:
+        messages.error(request, "ไม่พบกระทู้ที่ต้องการ")
+    return redirect(request.POST.get("next") or "forum:admin_threads")
+
+@staff_member_required
+@require_POST
+def admin_threads_bulk(request):
+    ids = request.POST.getlist("ids")
+    action = request.POST.get("action")
+    if not ids:
+        messages.warning(request, "ยังไม่ได้เลือกกระทู้")
+        return redirect(request.POST.get("next") or "forum:admin_threads")
+
+    qs = Thread.objects.filter(id__in=ids)
+    if action == "delete":
+        n = qs.update(is_deleted=True)
+    elif action == "restore":
+        n = qs.update(is_deleted=False)
+    else:
+        messages.warning(request, "ไม่รู้จักคำสั่งที่ส่งมา")
+        return redirect(request.POST.get("next") or "forum:admin_threads")
+
+    cache.delete(TRENDING_CACHE_KEY)  # << เพิ่ม
+    messages.success(request, f"อัปเดต {n} กระทู้แล้ว")
+    return redirect(request.POST.get("next") or "forum:admin_threads")
+
+# ===================== Public Views =====================
 
 def home(request):
     # ลิสต์หลัก
@@ -135,8 +249,8 @@ def home(request):
         request,
         "forum/thread_list.html",
         {
-            "threads": threads,       # สำหรับ loop แสดงรายการ
-            "page_obj": page_obj,     # สำหรับ pagination
+            "threads": threads,
+            "page_obj": page_obj,
             "cats": cats,
             "q": q,
             "cat": cat,
@@ -144,7 +258,6 @@ def home(request):
             "top_cats": top_cats,
         },
     )
-
 
 @ratelimit(key="ip", rate="10/m", block=True)
 @login_required
@@ -161,10 +274,14 @@ def thread_create(request):
         form = ThreadForm()
     return render(request, "forum/thread_form.html", {"form": form})
 
-
 @ratelimit(key="ip", rate="20/m", method=["POST"], block=True)
 def thread_detail(request, thread_id):
-    thread = get_object_or_404(Thread, pk=thread_id, is_deleted=False)
+    # ดึงกระทู้โดยไม่กรองสถานะก่อน
+    thread = get_object_or_404(Thread, pk=thread_id)
+
+    # ถ้ากระทู้ถูกลบ ให้เปิดดูได้เฉพาะ staff/superuser
+    if thread.is_deleted and not (request.user.is_staff or request.user.is_superuser):
+        raise Http404("No Thread matches the given query.")
 
     tags = _extract_tags_from(thread)[:6]
 
@@ -215,64 +332,43 @@ def thread_detail(request, thread_id):
         },
     )
 
-
 @ratelimit(key="ip", rate="30/m", method=["POST"], block=True)
 @login_required
-def thread_edit(request, thread_id):
-    thread = get_object_or_404(Thread, pk=thread_id, is_deleted=False)
-    if thread.author != request.user:
-        return HttpResponseForbidden("คุณไม่มีสิทธิ์แก้ไขกระทู้นี้")
+def thread_edit(request, thread_id: int):
+    thread = get_object_or_404(Thread, id=thread_id)
+
+    # ให้ staff/superuser แก้ไขได้เสมอ
+    if not (request.user.is_staff or request.user.is_superuser or request.user.id == thread.author_id):
+        return HttpResponseForbidden("คุณไม่มีสิทธิ์แก้ไขในกระทู้นี้")
 
     if request.method == "POST":
         form = ThreadForm(request.POST, request.FILES, instance=thread)
         if form.is_valid():
             form.save()
-            # ไม่ต้องลบ TRENDING_CACHE_KEY ก็ได้ เว้นแต่แก้ไขมีผลคะแนน
+            messages.success(request, "บันทึกการแก้ไขกระทู้แล้ว")
             return redirect("forum:thread_detail", thread_id=thread.id)
     else:
         form = ThreadForm(instance=thread)
 
-    return render(request, "forum/thread_form.html", {"form": form, "is_edit": True})
-
+    return render(request, "forum/thread_form.html", {"form": form, "thread": thread})
 
 @ratelimit(key="ip", rate="15/m", method=["POST"], block=True)
 @login_required
-@require_POST
-def thread_delete(request, thread_id):
-    thread = get_object_or_404(Thread, pk=thread_id, is_deleted=False)
-    if thread.author != request.user:
+def thread_delete(request, thread_id: int):
+    thread = get_object_or_404(Thread, id=thread_id)
+
+    if not (request.user.is_staff or request.user.is_superuser or request.user.id == thread.author_id):
         return HttpResponseForbidden("คุณไม่มีสิทธิ์ลบกระทู้นี้")
-    thread.is_deleted = True
-    thread.save(update_fields=["is_deleted"])
-    cache.delete(f"thread:{thread.id}:comment_count")
-    cache.delete(TRENDING_CACHE_KEY)
-    return redirect("forum:home")
-
-
-@ratelimit(key="ip", rate="10/m", method=["POST"], block=True)
-@login_required
-def report_create(request, target_type, target_id):
-    if target_type not in ("thread", "comment"):
-        return HttpResponseForbidden("invalid target")
 
     if request.method == "POST":
-        form = ReportForm(request.POST)
-        if form.is_valid():
-            r = form.save(commit=False)
-            r.target_type = target_type
-            r.target_id = int(target_id)
-            r.reporter = request.user
-            r.save()
-            return redirect("forum:home")
-    else:
-        form = ReportForm()
+        # soft-delete
+        thread.is_deleted = True
+        thread.save(update_fields=["is_deleted"])
+        messages.success(request, "ลบกระทู้แล้ว")
+        return redirect("forum:home")
 
-    return render(
-        request,
-        "forum/report_form.html",
-        {"form": form, "target_type": target_type, "target_id": target_id},
-    )
-
+    # ป้องกัน GET ตรง ๆ
+    return redirect("forum:thread_detail", thread_id=thread.id)
 
 @require_POST
 @login_required
@@ -292,12 +388,11 @@ def thread_like_toggle(request, thread_id):
     )
     return redirect(next_url)
 
-
 @login_required
-def comment_edit(request, pk):
-    c = get_object_or_404(Comment, pk=pk, is_deleted=False)
-    if c.author_id != request.user.id:
-        return HttpResponseForbidden("Forbidden")
+def comment_edit(request, pk: int):
+    c = get_object_or_404(Comment, pk=pk)
+    if not (request.user.is_staff or request.user.is_superuser or request.user.id == c.author_id):
+        return HttpResponseForbidden("คุณไม่มีสิทธิ์แก้ไขความคิดเห็นนี้")
 
     form = CommentForm(request.POST or None, request.FILES or None, instance=c)
     if request.method == "POST" and form.is_valid():
@@ -309,31 +404,16 @@ def comment_edit(request, pk):
 
     return render(request, "forum/comment_form.html", {"form": form, "comment": c})
 
-
 @login_required
-def comment_delete(request, pk):
-    c = get_object_or_404(Comment, pk=pk)   # ไม่กรองเพื่อให้รู้ thread_id เสมอ
-    if c.author_id != request.user.id:
-        return HttpResponseForbidden("Forbidden")
-
+def comment_delete(request, pk: int):
+    c = get_object_or_404(Comment, pk=pk)
+    if not (request.user.is_staff or request.user.is_superuser or request.user.id == c.author_id):
+        return HttpResponseForbidden("คุณไม่มีสิทธิ์ลบความคิดเห็นนี้")
     if request.method == "POST":
-        if hasattr(c, "is_deleted"):
-            if not c.is_deleted:
-                c.is_deleted = True
-                c.save(update_fields=["is_deleted"])
-        else:
-            c.delete()
-
-        cache.delete(f"thread:{c.thread_id}:comment_count")
-        cache.delete(TRENDING_CACHE_KEY)
+        c.is_deleted = True
+        c.save(update_fields=["is_deleted"])
         messages.success(request, "ลบความคิดเห็นแล้ว")
-        next_url = request.POST.get("next") or reverse(
-            "forum:thread_detail", kwargs={"thread_id": c.thread_id}
-        )
-        return redirect(next_url)
-
-    if hasattr(c, "is_deleted") and c.is_deleted:
-        messages.info(request, "ความคิดเห็นนี้ถูกลบไปแล้ว")
-        return redirect("forum:thread_detail", thread_id=c.thread_id)
-
-    return render(request, "forum/comment_confirm_delete.html", {"comment": c})
+        # ล้างแคช มาแรง + ตัวนับคอมเมนต์
+        cache.delete(TRENDING_CACHE_KEY)
+        cache.delete(f"thread:{c.thread_id}:comment_count")
+    return redirect("forum:thread_detail", thread_id=c.thread_id)

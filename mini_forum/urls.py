@@ -26,6 +26,8 @@ urlpatterns = [
     # adminpanel
     path("adminpanel/", include(("forum.admin_urls", "adminpanel"), namespace="adminpanel")),
 
+    path("adminpanel/", include("forum.admin_urls")),
+
 ]
 
 if settings.DEBUG:

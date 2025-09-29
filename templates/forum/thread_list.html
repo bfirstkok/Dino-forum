@@ -4,6 +4,16 @@
 
 {% block title %}Dino Forum{% endblock %}
 
+{% block head_extra %}
+<style>
+  /* ตัดบรรทัดสวย ๆ พร้อม … */
+  .clamp-1{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
+  .clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  /* กันคำ/ลิงก์ยาวทะลุกรอบ */
+  .wrap-anywhere{overflow-wrap:anywhere;word-break:break-word;}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row g-4">
   <!-- ซ้าย: รายการกระทู้ -->
@@ -11,29 +21,28 @@
 
     <!-- ค้นหา/กรอง -->
     <form id="searchForm" class="row g-2 align-items-center mb-3" method="get">
-  <div class="col-12 col-md-7">
-    <input class="form-control" type="search" name="q" placeholder="ค้นหากระทู้…"
-           value="{{ q }}">
-  </div>
+      <div class="col-12 col-md-7">
+        <input class="form-control" type="search" name="q" placeholder="ค้นหากระทู้…"
+               value="{{ q }}">
+      </div>
 
-  <div class="col-6 col-md-3">
-    <select class="form-select" name="cat" onchange="this.form.submit()">
-      <option value="">ทุกหมวด</option>
-      {% for c in cats %}
-        <option value="{{ c.id }}" {% if cat|add:'' == c.id|stringformat:"s" %}selected{% endif %}>
-          {{ c.name }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
+      <div class="col-6 col-md-3">
+        <select class="form-select" name="cat" onchange="this.form.submit()">
+          <option value="">ทุกหมวด</option>
+          {% for c in cats %}
+            <option value="{{ c.id }}" {% if cat|add:'' == c.id|stringformat:"s" %}selected{% endif %}>
+              {{ c.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
 
-  <div class="col-6 col-md-2">
-    <button type="submit" class="btn btn-primary w-100">
-      <i class="bi bi-search me-1"></i> ค้นหา
-    </button>
-  </div>
-</form>
-
+      <div class="col-6 col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-search me-1"></i> ค้นหา
+        </button>
+      </div>
+    </form>
 
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h1 class="h5 mb-0">Dino Forum</h1>
@@ -56,14 +65,14 @@
             {% endif %}
 
             <div class="flex-grow-1 min-w-0">
-              <h5 class="mb-1 text-truncate">
-                <a class="text-decoration-none link-body-emphasis"
+              <h5 class="mb-1">
+                <a class="text-decoration-none link-body-emphasis clamp-2 wrap-anywhere"
                    href="{% url 'forum:thread_detail' thread_id=t.id %}">
                   {{ t.title }}
                 </a>
               </h5>
 
-              <div class="small text-muted">
+              <div class="small text-muted text-truncate d-block wrap-anywhere" style="max-width:100%;">
                 {{ t.author|display_name }} <span class="text-muted">@{{ t.author.username }}</span>
                 • {{ t.created_at|date:"Y-m-d H:i" }}
                 {% if t.category %} • หมวด {{ t.category.name }}{% endif %}
@@ -127,13 +136,12 @@
             <a class="text-decoration-none d-flex gap-2 align-items-start"
                href="{% url 'forum:thread_detail' thread_id=t.id %}">
               {% if t.image and t.image.name %}
-                <img src="{{ t.image.url }}" class="rounded" style="width:48px;height:48px;object-fit:cover;">
-              {% else %}
-                <div class="rounded bg-body-secondary" style="width:48px;height:48px;"></div>
+                <img src="{{ t.image.url }}" alt="" class="rounded flex-shrink-0"
+                     style="width:48px;height:48px;object-fit:cover;">
               {% endif %}
               <div class="min-w-0">
-                <div class="small fw-semibold text-truncate">{{ t.title }}</div>
-                <div class="small text-muted">
+                <div class="small fw-semibold clamp-2 wrap-anywhere">{{ t.title }}</div>
+                <div class="small text-muted text-truncate d-block wrap-anywhere" style="max-width:100%;">
                   {{ t.author|display_name }} • {{ t.live_comment_count|default:0 }} ความเห็น • ♥ {{ t.like_count|default:0 }}
                 </div>
               </div>

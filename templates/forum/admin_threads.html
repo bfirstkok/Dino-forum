@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load profile_tags %}
+
+{% block title %}จัดการกระทู้ • Mini Forum{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">จัดการกระทู้</h1>
+  <div class="text-muted small">เฉพาะผู้ดูแลระบบ</div>
+</div>
+
+<form class="row g-2 align-items-center mb-3" method="get">
+  <div class="col-12 col-md-5">
+    <input class="form-control" type="search" name="q" placeholder="ค้นหาชื่อเรื่อง/เนื้อหา/ผู้เขียน…" value="{{ q }}">
+  </div>
+  <div class="col-6 col-md-3">
+    <select class="form-select" name="status">
+      <option value="all" {% if status == "all" %}selected{% endif %}>ทั้งหมด</option>
+      <option value="active" {% if status == "active" %}selected{% endif %}>ปกติ</option>
+      <option value="deleted" {% if status == "deleted" %}selected{% endif %}>ถูกลบ</option>
+    </select>
+  </div>
+  <div class="col-6 col-md-3">
+    <select class="form-select" name="order">
+      <option value="-created_at" {% if order == "-created_at" %}selected{% endif %}>ล่าสุดก่อน</option>
+      <option value="created_at"  {% if order == "created_at" %}selected{% endif %}>เก่าสุดก่อน</option>
+      <option value="-comment_count" {% if order == "-comment_count" %}selected{% endif %}>คอมเมนต์มากสุด</option>
+    </select>
+  </div>
+  <div class="col-12 col-md-1 d-grid">
+    <button class="btn btn-primary">ค้นหา</button>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table align-middle">
+    <thead class="table-secondary">
+      <tr>
+        <th style="width:56px">#</th>
+        <th>ชื่อกระทู้</th>
+        <th style="width:220px">ผู้เขียน</th>
+        <th style="width:140px">หมวด</th>
+        <th style="width:150px">สร้างเมื่อ</th>
+        <th style="width:120px">คอมเมนต์</th>
+        <th style="width:200px" class="text-end">การจัดการ</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for t in page_obj.object_list %}
+      <tr class="{% if t.is_deleted %}table-danger{% endif %}">
+        <td>{{ t.id }}</td>
+        <td class="text-truncate" style="max-width:420px;">
+          <a class="text-decoration-none" href="{% url 'forum:thread_detail' thread_id=t.id %}" target="_blank">
+            {{ t.title }}
+          </a>
+          {% if t.is_deleted %}<span class="badge text-bg-danger ms-1">ลบแล้ว</span>{% endif %}
+        </td>
+        <td>
+          {{ t.author|display_name }} <div class="small text-muted">@{{ t.author.username }}</div>
+        </td>
+        <td>{{ t.category.name|default:"—" }}</td>
+        <td class="small text-muted">{{ t.created_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ t.live_comment_count|default:0 }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-secondary"
+             href="{% url 'forum:thread_edit' thread_id=t.id %}">แก้ไข</a>
+
+          <form class="d-inline" method="post"
+                action="{% url 'forum:admin_thread_toggle_delete' thread_id=t.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            {% if t.is_deleted %}
+              <button class="btn btn-sm btn-success" onclick="return confirm('กู้คืนกระทู้นี้?');">กู้คืน</button>
+            {% else %}
+              <button class="btn btn-sm btn-outline-danger" onclick="return confirm('ลบกระทู้นี้?');">ลบ</button>
+            {% endif %}
+          </form>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="text-center text-muted py-5">ไม่พบกระทู้</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<nav class="mt-3">
+  <ul class="pagination mb-0">
+    {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}&order={{ order }}">«</a></li>
+    {% else %}<li class="page-item disabled"><span class="page-link">«</span></li>{% endif %}
+    <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}&order={{ order }}">»</a></li>
+    {% else %}<li class="page-item disabled"><span class="page-link">»</span></li>{% endif %}
+  </ul>
+</nav>
+{% endblock %}

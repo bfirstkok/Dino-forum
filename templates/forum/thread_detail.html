@@ -15,7 +15,7 @@
     <article class="card">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start gap-2">
-          <h3 class="card-title mb-2">{{ thread.title }}</h3>
+          <h3 class="card-title mb-2 wrap-anywhere">{{ thread.title }}</h3>
 
           <div class="d-flex gap-2 align-items-center">
             {% if user.is_authenticated %}
@@ -34,7 +34,7 @@
                href="{% url 'forum:report_create' 'thread' thread.id %}">
               รายงาน
             </a>
-            {% if user.is_authenticated and user.id == thread.author_id %}
+            {% if user.is_staff or user.is_superuser or user.is_authenticated and user.id == thread.author_id %}
               <a class="btn btn-outline-secondary btn-sm"
                  href="{% url 'forum:thread_edit' thread_id=thread.id %}">
                 แก้ไข
@@ -62,7 +62,7 @@
                style="max-height: 360px; width: 100%; object-fit: cover;">
         {% endif %}
 
-        <div class="mb-3">
+        <div class="mb-3 wrap-anywhere">
           {{ thread.content|linebreaks }}
         </div>
 
@@ -94,47 +94,46 @@
       {% endif %}
 
       <div class="vstack gap-3">
-        {% for c in thread.comments.all %}
-          {% if not c.is_deleted %}
-            <div class="card">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                  <div class="small text-muted mb-1">
-                    <a class="text-decoration-none"
-                       href="{% url 'accounts:profile_detail' username=c.author.username %}">
-                      {{ c.author|display_name }}
-                    </a>
-                    • {{ c.created_at|date:"Y-m-d H:i" }}
-                  </div>
-                  <div class="d-flex gap-2">
-                    <a class="btn btn-link btn-sm text-warning"
-                       href="{% url 'forum:report_create' 'comment' c.id %}">
-                      รายงาน
-                    </a>
-                    {% if user.is_authenticated and user.id == c.author_id %}
-                      <a class="btn btn-sm btn-outline-secondary"
-                         href="{% url 'forum:comment_edit' pk=c.id %}">แก้ไข</a>
-
-                      {# ลบแบบ POST เพื่อไม่โดน 405 #}
-                      <form method="post" action="{% url 'forum:comment_delete' pk=c.id %}"
-                            class="d-inline"
-                            onsubmit="return confirm('ยืนยันลบความคิดเห็นนี้หรือไม่?');">
-                        {% csrf_token %}
-                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                        <button class="btn btn-sm btn-outline-danger" type="submit">ลบ</button>
-                      </form>
-                    {% endif %}
-                  </div>
+        {# ใช้ comments ที่ view ส่งมา (คัด is_deleted=False แล้ว) #}
+        {% for c in comments %}
+          <div id="comment-{{ c.id }}" class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start">
+                <div class="small text-muted mb-1">
+                  <a class="text-decoration-none"
+                     href="{% url 'accounts:profile_detail' username=c.author.username %}">
+                    {{ c.author|display_name }}
+                  </a>
+                  • {{ c.created_at|date:"Y-m-d H:i" }}
                 </div>
+                <div class="d-flex gap-2">
+                  <a class="btn btn-link btn-sm text-warning"
+                     href="{% url 'forum:report_create' 'comment' c.id %}">
+                    รายงาน
+                  </a>
+                  {% if user.is_staff or user.is_superuser or user.is_authenticated and user.id == c.author_id %}
 
-                <div>{{ c.body|default:c.content|linebreaks }}</div>
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="{% url 'forum:comment_edit' pk=c.id %}">แก้ไข</a>
 
-                {% if c.image and c.image.name %}
-                  <img src="{{ c.image.url }}" class="rounded mt-2" style="max-width: 320px;">
-                {% endif %}
+                    <form method="post" action="{% url 'forum:comment_delete' pk=c.id %}"
+                          class="d-inline"
+                          onsubmit="return confirm('ยืนยันลบความคิดเห็นนี้หรือไม่?');">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <button class="btn btn-sm btn-outline-danger" type="submit">ลบ</button>
+                    </form>
+                  {% endif %}
+                </div>
               </div>
+
+              <div class="wrap-anywhere">{{ c.body|default:c.content|linebreaks }}</div>
+
+              {% if c.image and c.image.name %}
+                <img src="{{ c.image.url }}" class="rounded mt-2" style="max-width: 320px;">
+              {% endif %}
             </div>
-          {% endif %}
+          </div>
         {% empty %}
           <div class="text-muted">ยังไม่มีความคิดเห็น</div>
         {% endfor %}
