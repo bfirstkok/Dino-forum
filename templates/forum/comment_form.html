@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}แก้ไขความคิดเห็น{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-7">
+    <div class="card"><div class="card-body">
+      <h1 class="h5 mb-3">แก้ไขความคิดเห็น</h1>
+      <form method="post" enctype="multipart/form-data" class="vstack gap-3">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {{ form.as_p }}
+        <div class="d-flex gap-2">
+          <a class="btn btn-outline-secondary" href="{% url 'forum:thread_detail' thread_id=comment.thread_id %}">ยกเลิก</a>
+          <button class="btn btn-primary" type="submit">บันทึก</button>
+        </div>
+      </form>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load static %}
+{% load profile_tags %}
+
+{% block title %}Dino Forum{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Dino Forum</h1>
+  {% if user.is_authenticated %}
+    <a class="btn btn-primary" href="{% url 'forum:thread_create' %}">เขียนกระทู้</a>
+  {% else %}
+    <a class="btn btn-outline-primary" href="{% url 'account_login' %}">ล็อกอินเพื่อเขียนกระทู้</a>
+  {% endif %}
+</div>
+
+{# === Search + Category (เลือกหมวดแล้ว submit อัตโนมัติ) === #}
+<form id="searchForm" method="get" class="row g-2 align-items-center mb-3">
+  <div class="col">
+    <input type="search" class="form-control" name="q"
+           placeholder="ค้นหากระทู้..." value="{{ q }}">
+  </div>
+
+  {# hidden เก็บค่าหมวดที่จะส่งไปกับฟอร์ม #}
+  <input type="hidden" name="cat" id="catInput" value="{{ cat }}">
+
+  {% if cats %}
+  <div class="col-auto dropdown">
+    <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+            data-bs-toggle="dropdown" aria-expanded="false" id="catLabel">
+      ทุกหมวด
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li><a href="#" class="dropdown-item" data-cat="">ทุกหมวด</a></li>
+      {% for c in cats %}
+        <li><a href="#" class="dropdown-item" data-cat="{{ c.id }}">{{ c.name }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="col-auto">
+    <button class="btn btn-primary" type="submit">ค้นหา</button>
+  </div>
+</form>
+
+<script>
+(() => {
+  const form = document.getElementById('searchForm');
+  const catInput = document.getElementById('catInput');
+  const label = document.getElementById('catLabel');
+
+  document.querySelectorAll('.dropdown-menu [data-cat]').forEach(a => {
+    a.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const val = a.getAttribute('data-cat') || '';
+      catInput.value = val;
+      if (label) label.textContent = a.textContent.trim();
+      form.submit(); // เลือกหมวดแล้วค้นหาเลย
+    });
+  });
+
+  // เซ็ตชื่อปุ่มตามค่าที่หน้าปัจจุบันมีอยู่
+  const active = document.querySelector('.dropdown-menu [data-cat="' + (catInput.value || '') + '"]');
+  if (active && label) label.textContent = active.textContent.trim();
+})();
+</script>
+
+<div class="vstack gap-3">
+  {# รองรับได้ทั้งตัวแปร threads, thread_list หรือ page_obj.object_list #}
+  {% with items=threads|default:thread_list|default:page_obj.object_list %}
+  {% for t in items %}
+    <article class="card">
+      <div class="card-body d-flex gap-3">
+        {% if t.image and t.image.name %}
+          <a class="flex-shrink-0" href="{% url 'forum:thread_detail' thread_id=t.id %}">
+            <img src="{{ t.image.url }}" alt="" class="rounded"
+                 style="width:120px;height:80px;object-fit:cover;">
+          </a>
+        {% endif %}
+
+        <div class="flex-grow-1 min-w-0">
+          <h5 class="mb-1 text-truncate">
+            <a class="text-decoration-none link-body-emphasis"
+               href="{% url 'forum:thread_detail' thread_id=t.id %}">
+              {{ t.title }}
+            </a>
+          </h5>
+
+          <div class="small text-muted">
+            {{ t.author|display_name }} <span class="text-muted">@{{ t.author.username }}</span>
+            • {{ t.created_at|date:"Y-m-d H:i" }}
+            {% if t.category %} • หมวด {{ t.category.name }}{% endif %}
+            {% if t.comment_count %} • {{ t.comment_count }} ความเห็น{% endif %}
+            {% if t.like_count %} • ♥ {{ t.like_count }}{% endif %}
+          </div>
+
+          {% if t.tag_list %}
+            <div class="mt-1 d-flex flex-wrap gap-1">
+              {% for tag in t.tag_list %}
+                <span class="badge text-bg-secondary">{{ tag }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+  {% empty %}
+    <div class="text-muted">ยังไม่มีกระทู้</div>
+  {% endfor %}
+  {% endwith %}
+</div>
+
+{% if page_obj %}
+<nav class="mt-3">
+  <ul class="pagination mb-0">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link"
+           href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if cat %}cat={{ cat }}&{% endif %}page={{ page_obj.previous_page_number }}">«</a>
+      </li>
+    {% else %}<li class="page-item disabled"><span class="page-link">«</span></li>{% endif %}
+
+    <li class="page-item disabled">
+      <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    </li>
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link"
+           href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if cat %}cat={{ cat }}&{% endif %}page={{ page_obj.next_page_number }}">»</a>
+      </li>
+    {% else %}<li class="page-item disabled"><span class="page-link">»</span></li>{% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

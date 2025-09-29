@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}แก้ไขโปรไฟล์ | Mini Forum{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card card-neo p-4">
+      <h3 class="section-title mb-4">แก้ไขข้อมูลโปรไฟล์</h3>
+
+      <form method="post" enctype="multipart/form-data" class="row g-3">
+        {% csrf_token %}
+
+        {# โชว์ error ที่ไม่ผูกกับฟิลด์ใด ๆ #}
+        {% if form.non_field_errors %}
+          <div class="col-12">
+            <div class="alert alert-danger mb-2">
+              {{ form.non_field_errors }}
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Avatar -->
+        <div class="col-12 d-flex align-items-center gap-3">
+          {% static 'img/avatar-default.png' as default_avatar %}
+          <img id="avatarPreview" class="rounded-circle"
+               src="{% if profile.avatar %}{{ profile.avatar.url }}{% else %}{{ default_avatar }}{% endif %}"
+               style="width:72px;height:72px;object-fit:cover;border:1px solid var(--bs-border-color)">
+          <div class="flex-grow-1">
+            <label class="form-label mb-1">รูปโปรไฟล์</label>
+            {{ form.avatar }}
+            {% if form.avatar.errors %}
+              <div class="text-danger small mt-1">{{ form.avatar.errors }}</div>
+            {% endif %}
+            <div class="form-text">JPEG/PNG/WEBP ≤ 2MB</div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">ชื่อที่แสดง</label>
+          {{ form.display_name }}
+          {% if form.display_name.errors %}
+            <div class="text-danger small mt-1">{{ form.display_name.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">อีเมล</label>
+          {# คงค่าที่เพิ่งกรอกไว้หากฟอร์มไม่ผ่าน #}
+          <input type="email" name="email" class="form-control"
+                 value="{{ request.POST.email|default:request.user.email }}">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">แนะนำตัว</label>
+          {{ form.bio }}
+          {% if form.bio.errors %}
+            <div class="text-danger small mt-1">{{ form.bio.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">ลิงก์โซเชียล</label>
+          {{ form.social_link }}
+          {% if form.social_link.errors %}
+            <div class="text-danger small mt-1">{{ form.social_link.errors }}</div>
+          {% endif %}
+          <div class="form-text">ตัวอย่าง: https://example.com</div>
+        </div>
+
+ 
+
+        <div class="col-12 d-flex justify-content-between">
+          <a class="btn btn-outline-secondary"
+             href="{% url 'accounts:profile_detail' username=request.user.username %}">ยกเลิก</a>
+          <button class="btn btn-primary" type="submit">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const input = document.querySelector('input[type="file"][name="avatar"]');
+  const preview = document.getElementById('avatarPreview');
+  input?.addEventListener('change', e => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    preview.src = URL.createObjectURL(f);
+  });
+</script>
+{% endblock %}

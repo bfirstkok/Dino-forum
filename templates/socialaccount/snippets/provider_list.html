@@ -1,0 +1,20 @@
+{% load i18n socialaccount %}
+
+{% get_providers as socialaccount_providers %}
+<div class="d-grid gap-2">
+  {% for provider in socialaccount_providers %}
+    {% if provider.id == "openid" %}
+      {% for brand in provider.get_brands %}
+        <a class="btn btn-outline-secondary"
+           href="{% provider_login_url provider.id openid=brand.openid_url process=process %}">
+          {{ brand.name }}
+        </a>
+      {% endfor %}
+    {% else %}
+      <a class="btn btn-outline-secondary"
+         href="{% provider_login_url provider.id process=process %}">
+        {{ provider.name }}
+      </a>
+    {% endif %}
+  {% endfor %}
+</div>

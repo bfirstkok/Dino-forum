@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4" style="max-width:500px;">
+  <h3 class="mb-3">สมัครสมาชิก</h3>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary w-100">สมัคร</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="card border-0">
+    <div class="card-body">
+      <h4 class="mb-3">Connected accounts</h4>
+
+      {% get_social_accounts user as accounts %}
+      {% if accounts %}
+        <ul>
+          {% for provider, account_list in accounts.items %}
+            {% for account in account_list %}
+              <li>{{ provider.name }} — {{ account.extra_data.email|default:account.uid }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted">You currently have no social network accounts connected.</p>
+      {% endif %}
+
+      <hr class="my-4"/>
+
+      <h5 class="mb-2">Add a new connection</h5>
+      {% include "socialaccount/snippets/provider_list.html" with process="connect" %}
+    </div>
+  </div>
+</div>
+{% endblock %}

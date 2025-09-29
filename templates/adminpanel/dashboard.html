@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}แอดมินแพเนล • Dashboard{% endblock %}
+
+{% block content %}
+  {% include "adminpanel/_nav.html" %}
+
+  <div class="d-flex gap-2 mb-3">
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'adminpanel:cat_list' %}">
+      <i class="bi bi-folder2-open me-1"></i> จัดการหมวดหมู่
+    </a>
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'adminpanel:user_list' %}">
+      <i class="bi bi-people me-1"></i> จัดการผู้ใช้/สิทธิ์
+    </a>
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'adminpanel:report_list' %}">
+      <i class="bi bi-flag me-1"></i> ศูนย์จัดการรายงาน
+    </a>
+  </div>
+
+  <h1 class="h4 mb-3">แดชบอร์ดภาพรวม</h1>
+
+  <div class="row g-3">
+    <div class="col-md-3"><div class="card"><div class="card-body">
+      <div class="small text-muted">ผู้ใช้ทั้งหมด</div>
+      <div class="h4 mb-0">{{ total_users }}</div>
+      <div class="small text-muted">+{{ new_users_7d }} ใน 7 วัน</div>
+    </div></div></div>
+
+    <div class="col-md-3"><div class="card"><div class="card-body">
+      <div class="small text-muted">กระทู้ทั้งหมด</div>
+      <div class="h4 mb-0">{{ total_threads }}</div>
+      <div class="small text-muted">+{{ threads_7d }} ใน 7 วัน</div>
+    </div></div></div>
+
+    <div class="col-md-3"><div class="card"><div class="card-body">
+      <div class="small text-muted">ความคิดเห็นทั้งหมด</div>
+      <div class="h4 mb-0">{{ total_comments }}</div>
+      <div class="small text-muted">+{{ comments_7d }} ใน 7 วัน</div>
+    </div></div></div>
+
+    <div class="col-md-3"><div class="card"><div class="card-body">
+      <div class="small text-muted">รายงานที่เปิดอยู่</div>
+      <div class="h4 mb-0">{{ reports_open }}</div>
+    </div></div></div>
+  </div>
+
+  <div class="row g-3 mt-2">
+    <div class="col-lg-6">
+      <div class="card"><div class="card-body">
+        <h6 class="mb-2">กระทู้ล่าสุด</h6>
+        <ul class="list-group list-group-flush">
+          {% for t in latest_threads %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span class="text-truncate">{{ t.title }}</span>
+              <span class="text-muted small">{{ t.created_at|date:"Y-m-d H:i" }}</span>
+            </li>
+          {% empty %}<li class="list-group-item text-muted">ไม่มีข้อมูล</li>{% endfor %}
+        </ul>
+      </div></div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card"><div class="card-body">
+        <h6 class="mb-2">รายงานล่าสุด</h6>
+        <ul class="list-group list-group-flush">
+          {% for r in latest_reports %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span class="text-truncate">#{{ r.id }} • {{ r.target_type }} • {{ r.reason|default:"-" }}</span>
+              <span class="text-muted small">{{ r.created_at|date:"Y-m-d H:i" }}</span>
+            </li>
+          {% empty %}<li class="list-group-item text-muted">ไม่มีข้อมูล</li>{% endfor %}
+        </ul>
+      </div></div>
+    </div>
+  </div>
+{% endblock %}

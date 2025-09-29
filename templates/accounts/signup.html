@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}สมัครสมาชิก - Mini Forum{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h1 class="h5 mb-3">สมัครสมาชิก</h1>
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <form method="post" action="{% url 'account_signup' %}">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label">อีเมล (ไม่บังคับ)</label>
+            <input type="email" name="email" value="{{ form.email.value|default:'' }}"
+                   class="form-control" autocomplete="email">
+            {% for e in form.email.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">ยูสเซอร์เนม</label>
+            <input type="text" name="username" value="{{ form.username.value|default:'' }}"
+                   class="form-control" autocomplete="username" required>
+            {% for e in form.username.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">รหัสผ่าน</label>
+            <input type="password" name="password1" class="form-control"
+                   autocomplete="new-password" required>
+            {% for e in form.password1.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">ยืนยันรหัสผ่าน</label>
+            <input type="password" name="password2" class="form-control"
+                   autocomplete="new-password" required>
+            {% for e in form.password2.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+          </div>
+
+          {% if redirect_field_value %}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+          {% endif %}
+
+          <button class="btn btn-success" type="submit">สมัครสมาชิก</button>
+          <a class="btn btn-link" href="{% url 'account_login' %}">มีบัญชีแล้ว? เข้าสู่ระบบ</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

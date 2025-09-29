@@ -1,0 +1,119 @@
+/* ========== Reader layout (clean & single source of truth) ========== */
+/* ปรับเลขได้ตามชอบ: ความกว้างเนื้อหา, เพดานความกว้างรูป */
+:root{
+  --read-content-max: 920px;   /* ความกว้างรวมของคอลัมน์อ่าน */
+  --read-img-max: 560px;       /* เพดานรูปบนจอทั่วไป (ให้เล็กลง) */
+
+  /* ยกชั้นโปรไฟล์ดรอปดาวน์ให้สูงกว่าปุ่ม/คอนเทนต์ด้านล่าง */
+  --bs-dropdown-zindex: 2000;  /* เพิ่มค่าเริ่มต้นของ Bootstrap ทั่วระบบ */
+}
+@media (min-width: 1200px){
+  :root{ --read-img-max: 640px; }  /* จอใหญ่ ขยายได้อีกนิด */
+}
+
+/* คอลัมน์อ่าน – ใช้ได้กับคลาสเก่าหรือใหม่ */
+.post-page,
+.read-wrap{
+  max-width: var(--read-content-max);
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* หัวข้อ/เมตา */
+.read-title{
+  font-weight: 800;
+  font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.25rem);
+  line-height: 1.25;
+}
+.read-meta{ color: var(--bs-secondary-color); font-size: .95rem; }
+
+/* ชิปหมวด */
+.read-chip{
+  border-radius: 999px;
+  padding: .3rem .65rem;
+  font-size: .85rem;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+}
+.read-chip--cat{ background:#1f6feb; border-color:#1f6feb; color:#fff; }
+[data-bs-theme="light"] .read-chip{ background:#eef2ff; border-color:#dbeafe; }
+[data-bs-theme="light"] .read-chip--cat{ background:#3b82f6; border-color:#3b82f6; color:#fff; }
+
+/* ===== รูปภาพในหน้าอ่าน (รวมทุกกรณี) =====
+   - จำกัดให้ไม่เกิน --read-img-max
+   - จัดกลางเสมอ
+   - เงา/โค้งมุมพอดี */
+.post-card .post-cover,
+.post-cover,
+.read-cover,
+.prose img,
+.read-body img,
+article.post-card > header img{
+  width: min(100%, var(--read-img-max));
+  max-width: var(--read-img-max);
+  height: auto;
+  display: block;
+  margin: 1rem auto;                 /* จัดกลาง */
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.12);
+}
+
+/* เนื้อหาอ่านสบาย */
+.prose, .read-body{
+  font-size: 1.05rem;
+  line-height: 1.9;
+}
+
+/* === Profile dropdown look + z-index fix === */
+.navbar .dropdown-menu.usermenu{
+  z-index: 2050 !important;          /* ให้ลอยเหนือปุ่ม/คอนเทนต์ */
+  min-width: 260px;
+  padding: .25rem;
+  border-radius: 14px;
+  background: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color);
+  margin-top: .5rem;
+  box-shadow: 0 12px 30px rgba(0,0,0,.28);
+}
+
+.usermenu .dropdown-item{
+  display:flex; align-items:center; gap:.6rem;
+  padding:.55rem .75rem;
+  border-radius: 10px;
+  color: var(--bs-body-color);
+}
+.usermenu .dropdown-item:hover{
+  /* ถ้ามีตัวแปร rgb ให้ใช้ var, ไม่มีก็ fallback เป็น 255,255,255 */
+  background: rgba(var(--bs-body-color-rgb, 255,255,255), .06);
+}
+.usermenu .dropdown-divider{ border-color: var(--bs-border-color); }
+
+/* avatar บน navbar */
+.navbar-avatar{
+  width: 32px; height: 32px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid var(--bs-border-color);
+  box-shadow: 0 0 0 2px rgba(0,0,0,.12);
+  display: block;
+}
+/* ===== Fix: user dropdown goes behind page content ===== */
+
+/* 1) ให้ navbar มี stacking context และอยู่ชั้นสูง */
+.navbar {
+  position: relative;        /* สำคัญ: สร้าง stacking context */
+  z-index: 3000;             /* สูงกว่าปุ่ม/คอนเทนต์อื่นแน่นอน */
+}
+
+/* 2) ยกชั้น dropdown ของโปรไฟล์ให้สูงขึ้นไปอีก */
+.navbar .dropdown-menu.usermenu {
+  position: absolute;        /* คงตาม bootstrap */
+  z-index: 3050 !important;  /* กันเหนียว */
+  margin-top: .5rem;
+  box-shadow: 0 12px 30px rgba(0,0,0,.28);
+}
+
+/* ถ้าในหน้ามีแถบ/ส่วนใดตั้ง z-index สูง (เช่น header ภายในหน้า) 
+   สามารถลดชั้นมันลงได้ เช่น:
+.top-toolbar, .search-bar, .page-actions { z-index: 10; } 
+*/

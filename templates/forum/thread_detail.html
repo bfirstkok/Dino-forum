@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load static %}
+{% load profile_tags %}
+
+{% block title %}{{ thread.title }} • Dino Forum{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+
+    <nav class="mb-3">
+      <a class="text-decoration-none" href="{% url 'forum:home' %}">&larr; กลับหน้าแรก</a>
+    </nav>
+
+    <article class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <h3 class="card-title mb-2">{{ thread.title }}</h3>
+
+          <div class="d-flex gap-2 align-items-center">
+            {% if user.is_authenticated %}
+              <form method="post" action="{% url 'forum:thread_like_toggle' thread_id=thread.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="btn btn-sm {% if liked %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                  ♥ {{ likes_count }}
+                </button>
+              </form>
+            {% else %}
+              <span class="text-muted small">♥ {{ likes_count }}</span>
+            {% endif %}
+
+            <a class="btn btn-outline-warning btn-sm"
+               href="{% url 'forum:report_create' 'thread' thread.id %}">
+              รายงาน
+            </a>
+            {% if user.is_authenticated and user.id == thread.author_id %}
+              <a class="btn btn-outline-secondary btn-sm"
+                 href="{% url 'forum:thread_edit' thread_id=thread.id %}">
+                แก้ไข
+              </a>
+              <form method="post" action="{% url 'forum:thread_delete' thread_id=thread.id %}" class="d-inline">
+                {% csrf_token %}
+                <button class="btn btn-outline-danger btn-sm"
+                        onclick="return confirm('ลบกระทู้นี้?');">ลบ</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="small text-muted mb-3">
+          โดย
+          <a class="text-decoration-none"
+             href="{% url 'accounts:profile_detail' username=thread.author.username %}">
+            {{ thread.author|display_name }}
+          </a>
+          • {{ thread.created_at|date:"Y-m-d H:i" }}
+        </div>
+
+        {% if thread.image and thread.image.name %}
+          <img src="{{ thread.image.url }}" alt="" class="rounded mb-3"
+               style="max-height: 360px; width: 100%; object-fit: cover;">
+        {% endif %}
+
+        <div class="mb-3">
+          {{ thread.content|linebreaks }}
+        </div>
+
+        {% if tags %}
+          <div class="d-flex flex-wrap gap-1 mb-2">
+            {% for tag in tags %}
+              <span class="badge text-bg-secondary">{{ tag }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </article>
+
+    <section class="mt-4">
+      <h5 class="mb-3">ความเห็น</h5>
+
+      {% if user.is_authenticated %}
+        <form class="card mb-3" method="post" enctype="multipart/form-data">
+          <div class="card-body">
+            {% csrf_token %}
+            {{ comment_form.as_p }}
+            <button class="btn btn-primary" type="submit">ส่งความคิดเห็น</button>
+          </div>
+        </form>
+      {% else %}
+        <div class="alert alert-info">
+          ต้อง <a href="{% url 'account_login' %}">ล็อกอิน</a> ก่อนจึงจะคอมเมนต์ได้
+        </div>
+      {% endif %}
+
+      <div class="vstack gap-3">
+        {% for c in thread.comments.all %}
+          {% if not c.is_deleted %}
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="small text-muted mb-1">
+                    <a class="text-decoration-none"
+                       href="{% url 'accounts:profile_detail' username=c.author.username %}">
+                      {{ c.author|display_name }}
+                    </a>
+                    • {{ c.created_at|date:"Y-m-d H:i" }}
+                  </div>
+                  <div class="d-flex gap-2">
+                    <a class="btn btn-link btn-sm text-warning"
+                       href="{% url 'forum:report_create' 'comment' c.id %}">
+                      รายงาน
+                    </a>
+                    {% if user.is_authenticated and user.id == c.author_id %}
+                      <a class="btn btn-sm btn-outline-secondary"
+                         href="{% url 'forum:comment_edit' pk=c.id %}">แก้ไข</a>
+
+                      {# ลบแบบ POST เพื่อไม่โดน 405 #}
+                      <form method="post" action="{% url 'forum:comment_delete' pk=c.id %}"
+                            class="d-inline"
+                            onsubmit="return confirm('ยืนยันลบความคิดเห็นนี้หรือไม่?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button class="btn btn-sm btn-outline-danger" type="submit">ลบ</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div>{{ c.body|default:c.content|linebreaks }}</div>
+
+                {% if c.image and c.image.name %}
+                  <img src="{{ c.image.url }}" class="rounded mt-2" style="max-width: 320px;">
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        {% empty %}
+          <div class="text-muted">ยังไม่มีความคิดเห็น</div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <div class="post-footer mt-3">
+      <a href="{% url 'forum:home' %}">&larr; กลับหน้าแรก</a>
+    </div>
+  </div>
+
+  <div class="col-lg-4"></div>
+</div>
+{% endblock %}

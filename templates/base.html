@@ -1,0 +1,249 @@
+{% load static %}
+<!doctype html>
+<html lang="th" data-bs-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>{% block title %}Dino Forum{% endblock %}</title>
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <link href="{% static 'css/theme-dark.css' %}" rel="stylesheet">
+
+    <style>
+      header, .navbar, .navbar .container, .navbar .container-fluid { overflow: visible !important; }
+      :root{ --bs-dropdown-zindex: 2000; }
+
+      .navbar .dropdown-menu.usermenu{
+        position: absolute;
+        z-index: 3050 !important;  /* สูงกว่าเนื้อหา */
+        margin-top: .5rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 14px;
+        overflow: hidden;
+        isolation: isolate;
+        box-shadow: 0 12px 30px rgba(0,0,0,.28);
+        background-color: var(--mf-usermenu-bg);
+        backdrop-filter: none;
+      }
+      [data-bs-theme="dark"]  { --mf-usermenu-bg: #101317; }
+      [data-bs-theme="light"] { --mf-usermenu-bg: #ffffff; }
+
+      .navbar-avatar{
+        width: 32px; height: 32px; border-radius: 999px; object-fit: cover;
+        border: 1px solid var(--bs-border-color, #3a4150); box-shadow: 0 0 0 2px rgba(0,0,0,.12);
+        display: block;
+      }
+
+      .dropdown-menu.usermenu{ min-width: 260px; padding: .25rem; border-radius: 14px; }
+      .usermenu .dropdown-item{ display:flex; align-items:center; gap:.6rem; padding:.55rem .75rem; border-radius: 10px; color: var(--bs-body-color); }
+      .usermenu .dropdown-item:hover{ background: rgba(0,0,0,.06); }
+      .usermenu .dropdown-divider{ border-color: var(--bs-border-color); }
+
+      body.u-menu-open{ -webkit-user-select:none; -moz-user-select:none; user-select:none; }
+      body.u-menu-open .navbar .nav-link, body.u-menu-open .navbar .btn{ pointer-events:none; }
+      body.u-menu-open .dropdown, body.u-menu-open .dropdown *{ pointer-events:auto; }
+
+      [data-bs-theme="light"] .link-light,
+      [data-bs-theme="light"] .text-white,
+      [data-bs-theme="light"] .navbar .nav-link.text-white {
+        color: var(--bs-body-color) !important;
+      }
+      .link-on-light { color: inherit; }
+      [data-bs-theme="light"] .link-on-light { color: var(--bs-body-color) !important; }
+      [data-bs-theme="light"] .link-on-light:hover { color: var(--bs-link-color, #0d6efd) !important; }
+
+      /* === Dino Pattern Background (PNG) === */
+      body::before{
+        content:"";
+        position: fixed; inset: 0;
+        background: url("{% static 'img/dino-pattern.png' %}") center top /
+                    clamp(320px, 40vw, 640px) auto repeat;
+        opacity: .12;
+        pointer-events: none;
+        z-index: 0;  /* ให้อยู่ใต้ทุกอย่าง */
+        filter: grayscale(1) contrast(.95) brightness(.98);
+      }
+
+      /* --- stacking order ที่ถูกต้อง --- */
+      .navbar { position: relative; z-index: 3000; }           /* นำหน้าเนื้อหา */
+      main, .container, .card, footer, .modal, [role="main"]{
+        position: relative; z-index: 1;                         /* เหนือพื้นหลังพอ */
+      }
+
+      /* โหมดมืด: จางขึ้นเล็กน้อย */
+      html[data-bs-theme="dark"] body::before{
+        opacity: .16;
+        filter: grayscale(1) brightness(1.1);
+      }
+      @media (min-width: 1200px){
+        body::before{ background-size: clamp(280px, 30vw, 560px) auto; }
+      }
+    </style>
+
+    {% block head_extra %}{% endblock %}
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg bg-body border-bottom">
+      <div class="container">
+        <a class="navbar-brand fw-semibold" href="{% url 'forum:home' %}">Dino Forum</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div id="nav" class="collapse navbar-collapse">
+          <ul class="navbar-nav ms-auto align-items-center">
+            <li class="nav-item me-2">
+              <button id="themeToggle" class="btn btn-outline-secondary btn-sm" type="button" title="สลับธีม">
+                <span class="theme-icon">🌙</span>
+              </button>
+            </li>
+
+            {% if user.is_authenticated %}
+              <li class="nav-item me-2">
+                <a class="nav-link" href="{% url 'forum:thread_create' %}">เขียนกระทู้</a>
+              </li>
+
+              {% static 'img/avatar-default.png' as default_avatar %}
+              <li class="nav-item dropdown" data-bs-auto-close="outside">
+                <a class="nav-link p-0" href="#" id="navUserDropdown" role="button"
+                   data-bs-toggle="dropdown" data-bs-offset="8,10" aria-expanded="false">
+                  <img class="navbar-avatar"
+                       src="{% if user.profile and user.profile.avatar and user.profile.avatar.name %}{{ user.profile.avatar.url }}{% else %}{{ default_avatar }}{% endif %}"
+                       alt="{{ user.profile.display_name|default:user.username }}">
+                </a>
+
+                <ul class="dropdown-menu dropdown-menu-end usermenu" aria-labelledby="navUserDropdown">
+                  <li class="px-3 py-2 border-bottom d-flex align-items-center gap-2">
+                    <img class="rounded-circle" style="width:44px;height:44px;object-fit:cover"
+                         src="{% if user.profile and user.profile.avatar and user.profile.avatar.name %}{{ user.profile.avatar.url }}{% else %}{{ default_avatar }}{% endif %}" alt="">
+                    <div class="min-w-0">
+                      <div class="fw-semibold text-truncate">{{ user.profile.display_name|default:user.username }}</div>
+                      <div class="small text-muted text-truncate">@{{ user.username }}</div>
+                    </div>
+                  </li>
+
+                  <li>
+                    <a class="dropdown-item" href="{% url 'accounts:profile_me' %}">
+                      <i class="bi bi-person me-2"></i> หน้าของฉัน
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{% url 'accounts:profile_edit' %}">
+                      <i class="bi bi-shield-lock me-2"></i> จัดการข้อมูลส่วนตัว
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{% url 'accounts:settings_home' %}">
+                      <i class="bi bi-gear me-2"></i> การตั้งค่า
+                    </a>
+                  </li>
+
+                  <!-- ลิงก์เปลี่ยนรหัสผ่าน (allauth) -->
+                  <li>
+                    <a class="dropdown-item" href="{% url 'account_change_password' %}">
+                      <i class="bi bi-key me-2"></i> เปลี่ยนรหัสผ่าน
+                    </a>
+                  </li>
+
+                  {% if user.is_staff %}
+                  <li>
+                    <a class="dropdown-item" href="{% url 'adminpanel:dashboard' %}">
+                      <i class="bi bi-speedometer2 me-2"></i> แอดมินแพเนล
+                    </a>
+                  </li>
+                  {% endif %}
+
+                  <li><hr class="dropdown-divider"></li>
+
+                  <!-- ใช้ allauth logout -->
+                  <li class="px-3 pb-2">
+                    <form method="post" action="{% url 'account_logout' %}">
+                      {% csrf_token %}
+                      <button class="btn btn-outline-danger w-100" type="submit">
+                        <i class="bi bi-box-arrow-right me-1"></i> ออกจากระบบ
+                      </button>
+                    </form>
+                  </li>
+                </ul>
+              </li>
+            {% else %}
+              <!-- ใช้ allauth login/signup -->
+              <li class="nav-item"><a class="nav-link" href="{% url 'account_login' %}">ล็อกอิน</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'account_signup' %}">สมัคร</a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container my-4">
+      {% if messages %}
+        <div class="mb-3">
+          {% for m in messages %}
+            <div class="alert alert-{{ m.tags }} alert-dismissible fade show mb-2" role="alert">
+              {{ m }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      (function () {
+        const KEY = "theme";
+        const media = window.matchMedia("(prefers-color-scheme: dark)");
+        function getPreferred() {
+          const s = localStorage.getItem(KEY);
+          return (s === "light" || s === "dark") ? s : (media.matches ? "dark" : "light");
+        }
+        function setTheme(t) {
+          document.documentElement.setAttribute("data-bs-theme", t);
+          localStorage.setItem(KEY, t);
+          const icon = document.querySelector("#themeToggle .theme-icon");
+          if (icon) icon.textContent = t === "dark" ? "☀️" : "🌙";
+        }
+        setTheme(getPreferred());
+        document.getElementById("themeToggle")?.addEventListener("click", () => {
+          const cur = document.documentElement.getAttribute("data-bs-theme");
+          setTheme(cur === "dark" ? "light" : "dark");
+        });
+        media.addEventListener?.("change", () => {
+          if (!localStorage.getItem(KEY)) setTheme(getPreferred());
+        });
+      })();
+
+      function clearSelection() {
+        const sel = window.getSelection ? window.getSelection() : document.selection;
+        if (!sel) return;
+        if (sel.removeAllRanges) sel.removeAllRanges();
+        else if (sel.empty) sel.empty();
+      }
+      document.addEventListener('shown.bs.dropdown', (ev) => {
+        if (!ev.target.classList.contains('dropdown')) return;
+        document.body.classList.add('u-menu-open'); clearSelection();
+        document.activeElement && document.activeElement.blur?.();
+      });
+      document.addEventListener('hide.bs.dropdown', (ev) => {
+        if (!ev.target.classList.contains('dropdown')) return;
+        document.body.classList.remove('u-menu-open'); clearSelection();
+      });
+
+      setTimeout(() => {
+        document.querySelectorAll('.alert-dismissible.show').forEach(el => {
+          const alert = bootstrap.Alert.getOrCreateInstance(el);
+          alert.close();
+        });
+      }, 4000);
+    </script>
+
+    {% block body_extra %}{% endblock %}
+  </body>
+</html>

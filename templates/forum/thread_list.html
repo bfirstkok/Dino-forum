@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% load static %}
+{% load profile_tags %}
+
+{% block title %}Dino Forum{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- ซ้าย: รายการกระทู้ -->
+  <div class="col-lg-8">
+
+    <!-- ค้นหา/กรอง -->
+    <form id="searchForm" class="row g-2 align-items-center mb-3" method="get">
+  <div class="col-12 col-md-7">
+    <input class="form-control" type="search" name="q" placeholder="ค้นหากระทู้…"
+           value="{{ q }}">
+  </div>
+
+  <div class="col-6 col-md-3">
+    <select class="form-select" name="cat" onchange="this.form.submit()">
+      <option value="">ทุกหมวด</option>
+      {% for c in cats %}
+        <option value="{{ c.id }}" {% if cat|add:'' == c.id|stringformat:"s" %}selected{% endif %}>
+          {{ c.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-6 col-md-2">
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="bi bi-search me-1"></i> ค้นหา
+    </button>
+  </div>
+</form>
+
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h1 class="h5 mb-0">Dino Forum</h1>
+      {% if user.is_authenticated %}
+        <a class="btn btn-primary btn-sm" href="{% url 'forum:thread_create' %}">เขียนกระทู้</a>
+      {% else %}
+        <a class="btn btn-outline-primary btn-sm" href="{% url 'account_login' %}">ล็อกอินเพื่อเขียนกระทู้</a>
+      {% endif %}
+    </div>
+
+    <div class="vstack gap-3">
+      {% for t in threads %}
+        <article class="card">
+          <div class="card-body d-flex gap-3">
+            {% if t.image and t.image.name %}
+              <a class="flex-shrink-0" href="{% url 'forum:thread_detail' thread_id=t.id %}">
+                <img src="{{ t.image.url }}" alt="" class="rounded"
+                     style="width:120px;height:80px;object-fit:cover;">
+              </a>
+            {% endif %}
+
+            <div class="flex-grow-1 min-w-0">
+              <h5 class="mb-1 text-truncate">
+                <a class="text-decoration-none link-body-emphasis"
+                   href="{% url 'forum:thread_detail' thread_id=t.id %}">
+                  {{ t.title }}
+                </a>
+              </h5>
+
+              <div class="small text-muted">
+                {{ t.author|display_name }} <span class="text-muted">@{{ t.author.username }}</span>
+                • {{ t.created_at|date:"Y-m-d H:i" }}
+                {% if t.category %} • หมวด {{ t.category.name }}{% endif %}
+                {% if t.live_comment_count %} • {{ t.live_comment_count }} ความเห็น{% endif %}
+                {% if t.like_count %} • ♥ {{ t.like_count }}{% endif %}
+              </div>
+
+              {% if t.tag_list %}
+                <div class="mt-1 d-flex flex-wrap gap-1">
+                  {% for tag in t.tag_list %}
+                    <span class="badge text-bg-secondary">#{{ tag }}</span>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+      {% empty %}
+        <div class="text-muted">ยังไม่มีกระทู้</div>
+      {% endfor %}
+    </div>
+
+    {% if page_obj %}
+    <nav class="mt-3">
+      <ul class="pagination mb-0">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if cat %}cat={{ cat }}&{% endif %}page={{ page_obj.previous_page_number }}">«</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">«</span></li>
+        {% endif %}
+        <li class="page-item disabled">
+          <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if cat %}cat={{ cat }}&{% endif %}page={{ page_obj.next_page_number }}">»</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">»</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+
+  <!-- ขวา: Sidebar -->
+  <div class="col-lg-4">
+    <!-- กำลังมาแรง -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">กำลังมาแรง</h6>
+          <span class="badge text-bg-secondary">7 วันล่าสุด</span>
+        </div>
+        <div class="vstack gap-2">
+          {% for t in trending %}
+            <a class="text-decoration-none d-flex gap-2 align-items-start"
+               href="{% url 'forum:thread_detail' thread_id=t.id %}">
+              {% if t.image and t.image.name %}
+                <img src="{{ t.image.url }}" class="rounded" style="width:48px;height:48px;object-fit:cover;">
+              {% else %}
+                <div class="rounded bg-body-secondary" style="width:48px;height:48px;"></div>
+              {% endif %}
+              <div class="min-w-0">
+                <div class="small fw-semibold text-truncate">{{ t.title }}</div>
+                <div class="small text-muted">
+                  {{ t.author|display_name }} • {{ t.live_comment_count|default:0 }} ความเห็น • ♥ {{ t.like_count|default:0 }}
+                </div>
+              </div>
+            </a>
+          {% empty %}
+            <div class="text-muted small">ยังไม่มีรายการ</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- หมวดหมู่ยอดนิยม -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">หมวดหมู่ยอดนิยม</h6>
+        <div class="list-group list-group-flush">
+          {% for c in top_cats %}
+            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+               href="?cat={{ c.id }}">
+              <span class="text-truncate">{{ c.name }}</span>
+              <span class="badge rounded-pill text-bg-secondary">{{ c.thread_count|default:0 }}</span>
+            </a>
+          {% empty %}
+            <div class="text-muted small px-2">ยังไม่มีหมวดหมู่</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- สรุป -->
+    <div class="card">
+      <div class="card-body">
+        <h6 class="mb-2">สรุป</h6>
+        <div class="small text-muted">
+          {% if q or cat %}
+            แสดงผลลัพธ์{% if q %} คำค้น “{{ q }}”{% endif %}{% if cat %} ในหมวดที่เลือก{% endif %}
+          {% else %}
+            แสดงกระทู้ล่าสุดทั้งหมด
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

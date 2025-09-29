@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}เปลี่ยนสิทธิ์ผู้ใช้{% endblock %}
+{% block content %}
+<h1 class="h5 mb-3">เปลี่ยนสิทธิ์: {{ target.username }}</h1>
+<form method="post">{% csrf_token %}
+  <div class="form-check mb-3">
+    {{ form.is_staff }} <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">{{ form.fields.is_staff.label }}</label>
+  </div>
+  <button class="btn btn-primary">บันทึก</button>
+  <a class="btn btn-link" href="{% url 'adminpanel:user_list' %}">ย้อนกลับ</a>
+</form>
+{% endblock %}

@@ -1,0 +1,189 @@
+/* ===== look & feel ใกล้ภาพตัวอย่าง ===== */
+
+.section-title{
+  font-size: clamp(1.25rem, 1.2rem + .5vw, 1.75rem);
+  font-weight: 700;
+}
+
+/* การ์ดนุ่ม ๆ */
+.card-neo{
+  background: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+}
+
+/* การ์ดกระทู้ */
+.thread-card{
+  display:block;
+  background: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 16px;
+  padding: 14px;
+  color: inherit;
+  text-decoration: none;
+  transition: background .15s ease, border-color .15s ease, transform .06s ease;
+}
+.thread-card:hover{
+  background: #181d26;
+  border-color: #394251;
+}
+
+/* รูปตัวอย่างกระทู้ */
+.thread-thumb{
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 12px;
+  flex: 0 0 88px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+}
+
+.thread-title{ color:#fff; font-weight: 650; }
+.thread-meta{
+  color:#aeb6c2;
+  font-size:.9rem;
+  display:flex;
+  gap:.6rem;
+  flex-wrap:wrap;
+}
+
+/* ชิปแท็ก */
+.tag-badge{
+  padding:.25rem .55rem;
+  font-size:.8rem;
+  border-radius:999px;
+  background:#252c3a;
+  color:#cfd6e3;
+  border:1px solid #394251;
+}
+.tag-badge:hover{ background:#2b3343; }
+
+/* list-group ให้เข้าธีม */
+.list-group-item{
+  background: var(--bs-card-bg);
+  color: var(--bs-body-color);
+  border-color: var(--bs-border-color);
+}
+.list-group-item-action:hover{
+  background:#181d26;
+}
+
+/* ปุ่มในธีมมืด */
+.btn-primary{ background:#5b8cff; border-color:#5b8cff; }
+.btn-primary:hover{ background:#6e9bff; border-color:#6e9bff; }
+.btn-outline-secondary{ color:#cdd3dd; border-color:#3a4150; }
+.btn-outline-secondary:hover{ background:#2a3140; border-color:#3a4150; color:#fff; }
+
+/* Avatar ใหญ่ขึ้น */
+.navbar-avatar{
+  width: 40px;         /* เดิม 28px */
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid #3a4150;           /* วงแหวนกรอบบาง ๆ */
+  box-shadow: 0 0 0 2px rgba(255,255,255,.06); /* ช่วยให้เด่นบนพื้นมืด */
+  display: block;
+}
+
+/* จอใหญ่ ให้ใหญ่ขึ้นอีกนิด */
+@media (min-width: 992px){
+  .navbar-avatar{ width: 46px; height: 46px; }
+}
+
+/* เผื่อให้จัดแนวกลางสวย ๆ */
+.navbar-nav .nav-item.avatar-item{ display:flex; align-items:center; }
+
+/* ===== Topic detail (Pantip-like) ===== */
+.topic-card{
+  background:#0f274a;                      /* โทนน้ำเงินเข้มใน Dark */
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  padding:1.25rem 1.5rem;
+}
+[data-bs-theme="light"] .topic-card{
+  background:#f8fafc;                       /* โทนอ่อนใน Light */
+  border-color:#e5e7eb;
+}
+
+.topic-title{
+  font-size:clamp(1.25rem, 1.1rem + .8vw, 2rem);
+  font-weight:800;
+}
+
+.topic-tag{
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  color:inherit;
+  border-radius:999px;
+  padding:.25rem .6rem;
+  font-size:.85rem;
+  margin-right:.35rem;
+}
+[data-bs-theme="light"] .topic-tag{
+  background:#eef2ff;
+  border-color:#dbeafe;
+}
+
+.topic-cover{
+  display:block;
+  max-width:100%;
+  height:auto;
+  border-radius:8px;
+  margin:1rem auto 0;
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
+}
+
+.topic-body{
+  line-height:1.8;
+  font-size:1.05rem;
+}
+.topic-body img{
+  max-width:100%;
+  height:auto;
+  border-radius:8px;
+  margin:1rem auto;
+  display:block;
+}
+
+/* ความเห็น */
+.comment-card{
+  background:var(--mf-card);
+  border:1px solid var(--bs-border-color);
+  border-radius:8px;
+}
+.comment-img{ max-width:100%; border-radius:8px; }
+
+/* ===== Dino Pattern Background (PNG) ===== */
+body::before{
+  content:"";
+  position: fixed;
+  inset: 0;
+  background-image: url("../img/dino-pattern.png"); /* << เปลี่ยนเป็น .png */
+  background-repeat: repeat;                         /* ให้มีหลายตัว */
+  background-position: center top;
+  background-size: clamp(320px, 40vw, 640px) auto;   /* ปรับความถี่ของแพทเทิร์น */
+  opacity: 0.10;                                     /* จางกำลังสวยในโหมดสว่าง */
+  pointer-events: none;
+  z-index: 0;
+  filter: grayscale(1) contrast(.9) brightness(.95); /* ทำให้กลืนกับพื้นหลัง */
+}
+
+/* ทำให้คอนเทนต์อยู่เหนือภาพพื้นหลัง */
+.navbar, main, .container, .card, footer, .modal, [role="main"]{
+  position: relative;
+  z-index: 1;
+}
+
+/* โหมดมืด: จางขึ้นนิดหน่อย + เพิ่มความสว่างของลาย */
+html[data-bs-theme="dark"] body::before{
+  opacity: 0.14;
+  filter: grayscale(1) brightness(1.15);
+}
+
+/* จอใหญ่: ทำแพทเทิร์นถี่ขึ้นเล็กน้อย */
+@media (min-width: 1200px){
+  body::before{ background-size: clamp(280px, 30vw, 560px) auto; }
+}
+
+

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}การตั้งค่า{% endblock %}
+
+{% block content %}
+<div class="card p-3">
+  <h4 class="mb-3">การตั้งค่า</h4>
+  <div class="list-group">
+    <a class="list-group-item list-group-item-action" href="{% url 'account_change_password' %}">
+      เปลี่ยนรหัสผ่าน
+    </a>
+
+    <a class="list-group-item list-group-item-action" href="{% url 'accounts:devices_list' %}">
+      อุปกรณ์ที่เข้าสู่ระบบ
+    </a>
+
+    {% if has_social %}
+      <a class="list-group-item list-group-item-action" href="{% url 'socialaccount_connections' %}">
+        เชื่อมบัญชี Google / Facebook
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

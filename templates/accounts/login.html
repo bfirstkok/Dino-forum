@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}เข้าสู่ระบบ - Mini Forum{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h1 class="h5 mb-3">เข้าสู่ระบบ</h1>
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <form method="post" action="{% url 'account_login' %}">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label">อีเมลหรือยูสเซอร์เนม</label>
+            <input type="text" name="login" value="{{ form.login.value|default:'' }}"
+                   class="form-control" autocomplete="username" required>
+            {% for e in form.login.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">รหัสผ่าน</label>
+            <input type="password" name="password" class="form-control"
+                   autocomplete="current-password" required>
+            {% for e in form.password.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="remember" id="remember" {% if form.remember.value %}checked{% endif %}>
+            <label class="form-check-label" for="remember">จำฉันไว้ในระบบ</label>
+          </div>
+
+          {% if redirect_field_value %}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+          {% endif %}
+
+          <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-primary" type="submit">เข้าสู่ระบบ</button>
+            <a class="btn btn-link" href="{% url 'account_reset_password' %}">ลืมรหัสผ่าน?</a>
+          </div>
+        </form>
+
+        <hr class="my-4">
+        <div class="text-muted">
+          ยังไม่มีบัญชี? <a href="{% url 'account_signup' %}">สมัครสมาชิก</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

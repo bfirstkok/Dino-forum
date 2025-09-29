@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}ยืนยันลบหมวดหมู่{% endblock %}
+{% block content %}
+<h1 class="h5">ลบหมวด "{{ obj.name }}" ?</h1>
+<form method="post">{% csrf_token %}
+  <button class="btn btn-danger">ลบ</button>
+  <a class="btn btn-link" href="{% url 'adminpanel:cat_list' %}">ยกเลิก</a>
+</form>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}แอดมินแพเนล • Dashboard{% endblock %}
+{% block content %}
+  {% include "adminpanel/_nav.html" %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h5 mb-0">รายงาน</h1>
+</div>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-9 col-md-10"><input name="q" class="form-control" placeholder="ค้นหาเหตุผล/ชนิดเป้าหมาย" value="{{ q }}"></div>
+  <div class="col-3 col-md-2"><button class="btn btn-outline-secondary w-100">ค้นหา</button></div>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr>
+        <th style="width:80px">ID</th>
+        <th>ชนิด</th>
+        <th>เป้าหมาย</th>
+        <th>เหตุผล</th>
+        <th>ผู้รายงาน</th>
+        <th>เวลา</th>
+        <th style="width:260px"></th>
+      </tr></thead>
+      <tbody>
+        {% for r in items %}
+        <tr>
+          <td>#{{ r.id }}</td>
+          <td>{{ r.target_type }}</td>
+          <td>{{ r.target_id }}</td>
+          <td class="text-truncate" style="max-width:280px">{{ r.reason|default:"-" }}</td>
+          <td>{{ r.reporter.username }}</td>
+          <td class="text-muted small">{{ r.created_at|date:"Y-m-d H:i" }}</td>
+          <td class="text-end">
+            <form class="d-inline" method="post" action="{% url 'adminpanel:report_delete_target' r.id %}">{% csrf_token %}
+              <button class="btn btn-sm btn-outline-danger" onclick="return confirm('ลบเป้าหมายนี้และปิดรายงาน?')">ลบเป้าหมาย</button>
+            </form>
+            <form class="d-inline" method="post" action="{% url 'adminpanel:report_resolve' r.id %}">{% csrf_token %}
+              <button class="btn btn-sm btn-success">ปิดรายงาน</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-muted">ไม่มีรายงานค้าง</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

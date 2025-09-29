@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ profile.display_name|default:owner.username }} • Mini Forum{% endblock %}
+
+{% block content %}
+{% static 'img/avatar-default.png' as default_avatar %}
+
+<div class="card border-0 mb-3" style="background: var(--bs-secondary-bg);">
+  <div class="card-body d-flex align-items-center gap-3 flex-wrap">
+    <img
+      src="{{ profile.avatar_url|default:default_avatar }}"
+      alt="{{ profile.display_name|default:owner.username }}"
+      class="rounded-circle"
+      style="width:100px;height:100px;object-fit:cover;border:2px solid var(--bs-border-color)"
+    >
+
+    <div class="flex-grow-1 min-w-0">
+      <h4 class="mb-1 text-truncate">{{ profile.display_name|default:owner.username }}</h4>
+      <div class="text-muted small mb-2">
+        @{{ owner.username }} • เข้าร่วมเมื่อ {{ joined|date:"F Y" }}
+      </div>
+
+      {% if profile and profile.bio %}
+        <div class="text-body">{{ profile.bio|linebreaksbr }}</div>
+      {% endif %}
+    </div>
+
+    {% if request.user.is_authenticated and request.user.id == owner.id %}
+      <div class="ms-auto">
+        <a class="btn btn-outline-secondary" href="{% url 'accounts:profile_edit' %}">แก้ไขโปรไฟล์</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% with current_tab=tab|default:'overview' %}
+  <!-- แท็บ -->
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+      <a class="nav-link {% if current_tab == 'overview' %}active{% endif %}" href="?tab=overview">ภาพรวม</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if current_tab == 'threads' %}active{% endif %}" href="?tab=threads">
+        กระทู้ที่ตั้ง{% if threads_count %} ({{ threads_count }}){% endif %}
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if current_tab == 'replies' %}active{% endif %}" href="?tab=replies">
+        กระทู้ที่ตอบ{% if replies_count %} ({{ replies_count }}){% endif %}
+      </a>
+    </li>
+  </ul>
+
+  {# -------------------- ภาพรวม -------------------- #}
+  {% if current_tab == 'overview' %}
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <h6 class="mb-2">กระทู้ล่าสุด</h6>
+        <div class="vstack gap-2">
+          {% for t in threads_recent %}
+            <a class="card card-body py-2 text-decoration-none" href="{% url 'forum:thread_detail' thread_id=t.id %}">
+              <div class="fw-semibold text-truncate">{{ t.title }}</div>
+              <div class="small text-muted">
+                {{ t.created_at|date:"Y-m-d H:i" }}
+                {% with cc=t.live_comment_count|default:t.comment_count %}
+                  {% if cc %} • {{ cc }} ความเห็น{% endif %}
+                {% endwith %}
+              </div>
+            </a>
+          {% empty %}
+            <div class="text-muted">ยังไม่มีกระทู้</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <h6 class="mb-2">กระทู้ที่ไปตอบล่าสุด</h6>
+        <div class="vstack gap-2">
+          {% for t in replied_recent %}
+            <a class="card card-body py-2 text-decoration-none" href="{% url 'forum:thread_detail' thread_id=t.id %}">
+              <div class="fw-semibold text-truncate">{{ t.title }}</div>
+              <div class="small text-muted">
+                {{ t.created_at|date:"Y-m-d H:i" }}
+                {% with cc=t.live_comment_count|default:t.comment_count %}
+                  {% if cc %} • {{ cc }} ความเห็น{% endif %}
+                {% endwith %}
+              </div>
+            </a>
+          {% empty %}
+            <div class="text-muted">ยังไม่มีกระทู้ที่ไปตอบ</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  {# -------------------- กระทู้ที่ตั้ง -------------------- #}
+  {% if current_tab == 'threads' %}
+    {% with items=page_obj %}
+      <div class="vstack gap-3">
+        {% for t in items %}
+          <article class="card">
+            <div class="card-body d-flex gap-3">
+              {% if t.image and t.image.name %}
+                <a href="{% url 'forum:thread_detail' thread_id=t.id %}" class="flex-shrink-0">
+                  <img src="{{ t.image.url }}" alt="" class="rounded" style="width:120px;height:80px;object-fit:cover;">
+                </a>
+              {% endif %}
+              <div class="flex-grow-1 min-w-0">
+                <h5 class="mb-1 text-truncate">
+                  <a class="text-decoration-none link-body-emphasis" href="{% url 'forum:thread_detail' thread_id=t.id %}">
+                    {{ t.title }}
+                  </a>
+                </h5>
+                <div class="small text-muted">
+                  หมวด {{ t.category.name|default:"—" }} • {{ t.created_at|date:"Y-m-d H:i" }}
+                  {% with cc=t.live_comment_count|default:t.comment_count %}
+                    {% if cc %} • {{ cc }} ความเห็น{% endif %}
+                  {% endwith %}
+                </div>
+              </div>
+            </div>
+          </article>
+        {% empty %}
+          <div class="text-muted">ยังไม่มีกระทู้ที่ตั้ง</div>
+        {% endfor %}
+      </div>
+
+      {% if page_obj %}
+        <nav class="mt-3">
+          <ul class="pagination mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item"><a class="page-link" href="?tab=threads&page={{ page_obj.previous_page_number }}">«</a></li>
+            {% else %}<li class="page-item disabled"><span class="page-link">«</span></li>{% endif %}
+            <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+              <li class="page-item"><a class="page-link" href="?tab=threads&page={{ page_obj.next_page_number }}">»</a></li>
+            {% else %}<li class="page-item disabled"><span class="page-link">»</span></li>{% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% endwith %}
+  {% endif %}
+
+  {# -------------------- กระทู้ที่ตอบ -------------------- #}
+  {% if current_tab == 'replies' %}
+    {% with items=page_obj %}
+      <div class="vstack gap-3">
+        {% for t in items %}
+          <article class="card">
+            <div class="card-body d-flex gap-3">
+              {% if t.image and t.image.name %}
+                <a href="{% url 'forum:thread_detail' thread_id=t.id %}" class="flex-shrink-0">
+                  <img src="{{ t.image.url }}" alt="" class="rounded" style="width:120px;height:80px;object-fit:cover;">
+                </a>
+              {% endif %}
+              <div class="flex-grow-1 min-w-0">
+                <h5 class="mb-1 text-truncate">
+                  <a class="text-decoration-none link-body-emphasis" href="{% url 'forum:thread_detail' thread_id=t.id %}">
+                    {{ t.title }}
+                  </a>
+                </h5>
+                <div class="small text-muted">
+                  หมวด {{ t.category.name|default:"—" }} • {{ t.created_at|date:"Y-m-d H:i" }}
+                  {% with cc=t.live_comment_count|default:t.comment_count %}
+                    {% if cc %} • {{ cc }} ความเห็น{% endif %}
+                  {% endwith %}
+                </div>
+              </div>
+            </div>
+          </article>
+        {% empty %}
+          <div class="text-muted">ยังไม่มีกระทู้ที่ตอบ</div>
+        {% endfor %}
+      </div>
+
+      {% if page_obj %}
+        <nav class="mt-3">
+          <ul class="pagination mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item"><a class="page-link" href="?tab=replies&page={{ page_obj.previous_page_number }}">«</a></li>
+            {% else %}<li class="page-item disabled"><span class="page-link">«</span></li>{% endif %}
+            <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+              <li class="page-item"><a class="page-link" href="?tab=replies&page={{ page_obj.next_page_number }}">»</a></li>
+            {% else %}<li class="page-item disabled"><span class="page-link">»</span></li>{% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% endwith %}
+  {% endif %}
+{% endwith %}
+{% endblock %}

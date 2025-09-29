@@ -1,0 +1,33 @@
+<div class="mb-3">
+  {% with name=request.resolver_match.url_name %}
+  <ul class="nav nav-pills gap-2">
+    <li class="nav-item">
+      <a class="nav-link {% if name == 'dashboard' %}active{% endif %}"
+         href="{% url 'adminpanel:dashboard' %}">
+        <i class="bi bi-speedometer2 me-1"></i> แดชบอร์ด
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {% if name == 'cat_list' or name == 'cat_create' or name == 'cat_edit' %}active{% endif %}"
+         href="{% url 'adminpanel:cat_list' %}">
+        <i class="bi bi-folder2-open me-1"></i> หมวดหมู่
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {% if name == 'user_list' or name == 'user_role_toggle' %}active{% endif %}"
+         href="{% url 'adminpanel:user_list' %}">
+        <i class="bi bi-people me-1"></i> ผู้ใช้
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link {% if name == 'report_list' %}active{% endif %}"
+         href="{% url 'adminpanel:report_list' %}">
+        <i class="bi bi-flag me-1"></i> รายงาน
+      </a>
+    </li>
+  </ul>
+  {% endwith %}
+</div>

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}จัดการหมวดหมู่{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h5 mb-0">หมวดหมู่</h1>
+  <a class="btn btn-primary" href="{% url 'adminpanel:cat_create' %}">เพิ่มหมวด</a>
+</div>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-9 col-md-10">
+    <input class="form-control" name="q" placeholder="ค้นหาหมวด..." value="{{ q }}">
+  </div>
+  <div class="col-3 col-md-2">
+    <button class="btn btn-outline-secondary w-100">ค้นหา</button>
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th style="width:80px">ลำดับ</th><th>ชื่อ</th><th style="width:220px"></th></tr></thead>
+      <tbody>
+        {% for c in items %}
+        <tr>
+          <td>{{ c.order }}</td>
+          <td>{{ c.name }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'adminpanel:cat_move' c.id 'up' %}">↑</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'adminpanel:cat_move' c.id 'down' %}">↓</a>
+            <a class="btn btn-sm btn-warning" href="{% url 'adminpanel:cat_edit' c.id %}">แก้ไข</a>
+            <form class="d-inline" method="post" action="{% url 'adminpanel:cat_delete' c.id %}">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-outline-danger" onclick="return confirm('ลบหมวดนี้?')">ลบ</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-muted">ยังไม่มีหมวด</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

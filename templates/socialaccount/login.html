@@ -1,0 +1,38 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+{% block head_title %}{% if process == "connect" %}{% trans "Connect" %}{% else %}{% trans "Sign in" %}{% endif %} {{ provider.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h1 class="h4 mb-3">
+          {% if process == "connect" %}
+            {% trans "Connect" %} {{ provider.name }}
+          {% else %}
+            {% trans "Sign in with" %} {{ provider.name }}
+          {% endif %}
+        </h1>
+
+        {% if process == "connect" %}
+          <p class="text-muted">
+            {% blocktrans with p=provider.name %}You are about to connect a new third-party account from {{ p }}.{% endblocktrans %}
+          </p>
+        {% else %}
+          <p class="text-muted">
+            {% blocktrans with p=provider.name %}You are about to sign in using a third-party account from {{ p }}.{% endblocktrans %}
+          </p>
+        {% endif %}
+
+        {# โพสต์กลับ URL เดิมเพื่อดำเนินการต่อ #}
+        <form method="post" class="mt-2">
+          {% csrf_token %}
+          <button class="btn btn-primary" type="submit">{% trans "Continue" %}</button>
+          <a class="btn btn-outline-secondary ms-2" href="{% url 'account_login' %}">{% trans "Cancel" %}</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

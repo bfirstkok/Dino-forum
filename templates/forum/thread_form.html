@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="h4 mb-3">{% if is_edit %}แก้ไขกระทู้{% else %}สร้างกระทู้ใหม่{% endif %}</h1>
+
+    <!-- ต้องมี enctype เพื่อส่งไฟล์ -->
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        {{ form.category.label_tag }} {{ form.category }}
+      </div>
+
+      <div class="mb-3">
+        {{ form.title.label_tag }} {{ form.title }}
+        {% for e in form.title.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="mb-3">
+        {{ form.content.label_tag }} {{ form.content }}
+        {% for e in form.content.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+
+      <!-- ช่องอัปโหลดรูป -->
+      <div class="mb-3">
+        {{ form.image.label_tag }} {{ form.image }}
+        {% for e in form.image.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        <div class="form-text">รองรับ JPEG/PNG/WEBP/GIF ขนาดไม่เกิน 5MB</div>
+
+        {# แสดงรูปเดิมตอนแก้ไข #}
+        {% if is_edit and form.instance.image %}
+          <div class="mt-2">
+            <img src="{{ form.instance.image.url }}" class="img-fluid rounded border" alt="current image">
+          </div>
+        {% endif %}
+      </div>
+
+      <button class="btn btn-primary">บันทึก</button>
+      <a class="btn btn-link" href="{% url 'forum:home' %}">ยกเลิก</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
