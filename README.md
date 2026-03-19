@@ -25,7 +25,6 @@
 - Database: **SQLite** (default) / PostgreSQL (optional)
 - Frontend: Django Templates (Bootstrap/Tailwind optional)
 - Cache/Queue (optional): Redis / Celery
-- AI (optional): OpenAI / Local LLM integration
 
 ---
 
