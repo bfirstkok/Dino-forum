@@ -15,7 +15,6 @@
 - Comments System | ระบบคอมเมนต์
 - Search / Filter (optional) | ค้นหา/กรอง (เพิ่มเติมได้)
 - Admin Dashboard (Django Admin) | จัดการระบบผ่าน Django Admin
-- AI Assistant (optional) | ผู้ช่วย AI (ฟีเจอร์เสริม/ต่อยอด)
 
 ---
 
